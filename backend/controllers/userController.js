@@ -29,19 +29,68 @@ const signup = async (req, res) => {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    const newUser = new userModel({ name, email, password: hashedPassword });
+    const verifyToken = crypto.randomBytes(32).toString("hex");
+
+    const newUser = new userModel({
+      name,
+      email,
+      password: hashedPassword,
+      verifyToken,
+      verifyTokenExpire: Date.now() + 3600000,
+    });
 
     const user = await newUser.save();
-    const token = generateToken(user._id);
+
+    const verifyLink = `http://localhost:5000/api/user/verify-email/${verifyToken}`;
+
+    const transporter = nodemailer.createTransport({
+      host: process.env.MAIL_HOST,
+      port: process.env.MAIL_PORT,
+      auth: {
+        user: process.env.MAIL_USER,
+        pass: process.env.MAIL_PASS,
+      },
+    });
+
+    const message = {
+      from: '"NoReply" <no-reply@example.com>',
+      to: user.email,
+      subject: "Verify your email",
+      html: `<p>Click <a href="${verifyLink}">here</a> to verify your email address</p>`,
+    };
+
+    await transporter.sendMail(message);
 
     res.status(201).json({
       success: true,
-      token,
-      user: { id: user._id, email: user.email, name: user.name }
+      message: "Registration successful. Check your email to verify your account.",
     });
   } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
+    res.status(500).json({
+      success: false,
+      message: err.message,
+    });
   }
+};
+
+const verifyEmail = async (req, res) => {
+  const { token } = req.params;
+
+  const user = await userModel.findOne({
+    verifyToken: token,
+    verifyTokenExpire: { $gt: Date.now() },
+  });
+
+  if (!user) {
+    return res.status(400).json({ message: "Invalid or expired token" });
+  }
+
+  user.isVerified = true;
+  user.verifyToken = undefined;
+  user.verifyTokenExpire = undefined;
+  await user.save();
+
+  res.status(200).json({ message: "Email verified successfully" });
 };
 
 // ------------------ LOGIN ------------------
@@ -49,17 +98,25 @@ const login = async (req, res) => {
   const { email, password } = req.body;
 
   const user = await userModel.findOne({ email });
-  if (!user) return res.status(404).json({ message: "User not found" });
+  if (!user) {
+    return res.status(404).json({ message: "User not found" });
+  }
 
   const isMatch = await bcrypt.compare(password, user.password);
-  if (!isMatch) return res.status(400).json({ message: "Invalid credentials" });
+  if (!isMatch) {
+    return res.status(400).json({ message: "Invalid credentials" });
+  }
+
+  if (!user.isVerified) {
+    return res.status(401).json({ message: "Please verify your email to login" });
+  }
 
   const token = generateToken(user._id);
 
   res.status(200).json({
     success: true,
     token,
-    user: { id: user._id, name: user.name, email: user.email }
+    user: { id: user._id, name: user.name, email: user.email },
   });
 };
 
@@ -155,6 +212,7 @@ export {
   login,
   forgotPassword,
   resetPassword,
+  verifyEmail,
   updateUser,
   deleteUser
 };

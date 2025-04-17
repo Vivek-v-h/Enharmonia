@@ -2,6 +2,7 @@ import React from "react";
 import { useState } from "react";
 import { Menu, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { NavLink } from "react-router";
 
 const Navbar = () => {
     const [isOpen, setIsOpen] = useState(false);
@@ -43,11 +44,13 @@ const Navbar = () => {
         </nav>
 
         {/* Login Button */}
-        <div className="ml-auto">
-          <button className="border rounded-xl border-green-700  px-7 py-1 hover:bg-green-100 cursor-pointer text-green-700">
-            Login
-          </button>
-        </div>
+        <NavLink to="/login-signup">
+          <div className="ml-auto">
+            <button className="border rounded-xl border-green-700  px-7 py-1 hover:bg-green-100 cursor-pointer text-green-700">
+              Login
+            </button>
+          </div>
+        </NavLink>
 
         {/* Mobile Menu - Animated */}
         <AnimatePresence>
