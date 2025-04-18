@@ -123,7 +123,7 @@ const Hero = () => {
             </div>
 
             {/* Search Button */}
-            <button className="bg-blue-500 hover:bg-blue-600 text-white p-3 rounded-xl mt-4 lg:mt-0">
+            <button className="bg-[#29659e] hover:bg-[#8dccff] text-white hover:text-black p-3 rounded-xl mt-4 lg:mt-0 cursor-pointer">
               <FiSearch size={20} />
             </button>
           </motion.div>

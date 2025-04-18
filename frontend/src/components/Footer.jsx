@@ -48,13 +48,13 @@ const Footer = () => {
             </div>
 
             <div>
-              <h3 className="font-semibold mb-2">Subscribe</h3>
+              <h3 className="font-semibold  mb-2">Subscribe</h3>
               <input
                 type="email"
                 placeholder="Enter Email"
                 className="px-3 py-2 border rounded w-full"
               />
-              <button className="bg-green-700 text-white px-4 py-2 rounded mt-2 hover:bg-green-800">
+              <button className="bg-green-700 cursor-pointer text-white px-4 py-2 rounded mt-2 hover:bg-green-800">
                 Subscribe
               </button>
             </div>
