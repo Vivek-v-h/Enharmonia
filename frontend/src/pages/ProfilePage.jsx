@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { motion } from "framer-motion";
-import { FiUpload, FiMail, FiSave } from "react-icons/fi";
+import { motion, AnimatePresence } from "framer-motion";
+import { FiUpload, FiMail, FiSave, FiTrash2 } from "react-icons/fi";
 
-const API_BASE =  "http://localhost:3000";
+const API_BASE = "http://localhost:3000";
 
 const ProfilePage = () => {
   const [userData, setUserData] = useState(null);
@@ -11,6 +11,8 @@ const ProfilePage = () => {
   const [avatar, setAvatar] = useState(null);
   const [avatarPreview, setAvatarPreview] = useState(null);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     const fetchUserProfile = async () => {
@@ -73,6 +75,22 @@ const ProfilePage = () => {
     }
   };
 
+  const handleDeleteProfile = async () => {
+    setDeleting(true);
+    try {
+      const token = localStorage.getItem("token");
+      await axios.delete(`${API_BASE}/api/user/delete`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      localStorage.removeItem("token");
+      window.location.href = "/";
+    } catch (error) {
+      console.error("Error deleting profile:", error);
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -96,7 +114,7 @@ const ProfilePage = () => {
       transition={{ duration: 0.5 }}
       className="min-h-screen bg-gradient-to-br from-blue-100 to-blue-50 py-12 px-4"
     >
-      <div className="max-w-3xl mx-auto bg-white p-8 rounded-xl shadow-lg">
+      <div className="max-w-3xl mx-auto bg-white p-8 rounded-xl shadow-lg relative">
         <div className="flex flex-col md:flex-row items-center gap-8">
           <div className="relative group">
             <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-white shadow-lg">
@@ -161,7 +179,57 @@ const ProfilePage = () => {
             )}
           </div>
         </div>
+
+        {/* Delete Profile Button - Small and Positioned Bottom Right */}
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={() => setShowDeleteModal(true)}
+          className="absolute bottom-4 right-4 flex items-center px-3 py-1.5 text-sm bg-red-600 text-white rounded-md hover:bg-red-700 transition"
+        >
+          <FiTrash2 className="mr-1" />
+          Delete
+        </motion.button>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      <AnimatePresence>
+        {showDeleteModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50"
+          >
+            <motion.div
+              initial={{ scale: 0.8 }}
+              animate={{ scale: 1 }}
+              exit={{ scale: 0.8 }}
+              className="bg-white rounded-xl shadow-2xl p-6 w-full max-w-md text-center"
+            >
+              <h2 className="text-xl font-bold text-gray-800 mb-2">Are you sure?</h2>
+              <p className="text-gray-600 mb-4">
+                We're sorry to see you go. This action cannot be undone.
+              </p>
+              <div className="flex justify-center space-x-4">
+                <button
+                  onClick={() => setShowDeleteModal(false)}
+                  className="px-4 py-2 rounded-lg bg-gray-200 hover:bg-gray-300 text-gray-800 transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleDeleteProfile}
+                  disabled={deleting}
+                  className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white transition disabled:opacity-50"
+                >
+                  {deleting ? "Deleting..." : "Delete"}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 };

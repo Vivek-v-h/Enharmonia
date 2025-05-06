@@ -1,25 +1,64 @@
-import React, { useState } from "react";
-import { Menu, X, UserCircle } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { Menu, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { logout } from "../redux/authSlice";
 import { Link } from "react-scroll";
 import { Button } from "@mui/material";
+import axios from "axios";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [avatarDropdown, setAvatarDropdown] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState("/default-avatar.png");
 
-  // Get user and authentication status from Redux store
   const { isAuthenticated, user } = useSelector((state) => state.auth);
   const dispatch = useDispatch();
   const navigate = useNavigate();
+
+  const API_BASE = "http://localhost:3000";
+
+  useEffect(() => {
+    const fetchAvatar = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const res = await axios.get(`${API_BASE}/api/user/profile`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        const avatar = res.data?.avatar;
+
+        const fullAvatarUrl = avatar
+          ? avatar.startsWith("http")
+            ? avatar
+            : `${API_BASE}${avatar.startsWith("/") ? "" : "/"}${avatar}`
+          : "/default-avatar.png";
+
+        setAvatarUrl(fullAvatarUrl);
+      } catch (error) {
+        console.error("Error fetching avatar:", error);
+        setAvatarUrl("/default-avatar.png");
+      }
+    };
+
+    if (isAuthenticated) {
+      fetchAvatar();
+    } else {
+      setAvatarUrl("/default-avatar.png");
+    }
+  }, [isAuthenticated]);
 
   const handleLogout = () => {
     dispatch(logout());
     setAvatarDropdown(false);
     window.location.href = "/";
+  };
+
+  const handleImageError = (e) => {
+    e.target.src = "/default-avatar.png";
   };
 
   return (
@@ -65,7 +104,7 @@ const Navbar = () => {
         </Link>
       </nav>
 
-      {/* Right Section - Login or Avatar */}
+      {/* Right Section */}
       <div className="ml-auto relative">
         {!isAuthenticated ? (
           <NavLink to="/login-signup">
@@ -79,13 +118,18 @@ const Navbar = () => {
               onClick={() => setAvatarDropdown(!avatarDropdown)}
               className="flex items-center space-x-2 focus:outline-none cursor-pointer"
             >
-              <UserCircle size={32} className="text-gray-700" />
+              <img
+                src={avatarUrl}
+                alt="User Avatar"
+                className="w-8 h-8 rounded-full object-cover border border-gray-300"
+                onError={handleImageError}
+              />
               <span className="text-sm text-gray-800">
                 {user?.name || "User"}
               </span>
             </button>
 
-            {/* Avatar Dropdown */}
+            {/* Dropdown */}
             <AnimatePresence>
               {avatarDropdown && (
                 <motion.div
@@ -113,94 +157,6 @@ const Navbar = () => {
           </div>
         )}
       </div>
-
-      {/* Mobile Drawer Navigation */}
-      <AnimatePresence>
-        {isOpen && (
-          <>
-            <motion.div
-              className="fixed inset-0 bg-black bg-opacity-30 backdrop-blur-sm z-40"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setIsOpen(false)}
-            />
-            <motion.nav
-              initial={{ x: "-100%" }}
-              animate={{ x: 0 }}
-              exit={{ x: "-100%" }}
-              transition={{ type: "tween", duration: 0.3 }}
-              className="fixed top-0 left-0 w-3/4 sm:w-1/2 h-full bg-white shadow-lg z-50 flex flex-col p-6 text-lg"
-            >
-              <div className="self-end mb-6">
-                <button onClick={() => setIsOpen(false)}>
-                  <X size={26} className="text-gray-800" />
-                </button>
-              </div>
-
-              <NavLink
-                to="/"
-                className="hover:text-blue-600 mb-4"
-                onClick={() => setIsOpen(false)}
-              >
-                Home
-              </NavLink>
-              <NavLink
-                to="#"
-                className="hover:text-blue-600 mb-4"
-                onClick={() => setIsOpen(false)}
-              >
-                Post An Ad
-              </NavLink>
-              <NavLink
-                to="#"
-                className="hover:text-blue-600 mb-4"
-                onClick={() => setIsOpen(false)}
-              >
-                Find Properties
-              </NavLink>
-              <NavLink
-                to="#"
-                className="hover:text-blue-600"
-                onClick={() => setIsOpen(false)}
-              >
-                Contact Us
-              </NavLink>
-              {!isAuthenticated ? (
-                <NavLink
-                  to="/login-signup"
-                  onClick={() => setIsOpen(false)}
-                  className="mt-6 text-[#29659e] border border-[#29659e] rounded-xl px-4 py-2 text-center hover:bg-[#c7c5d4] cursor-pointer"
-                >
-                  Login
-                </NavLink>
-              ) : (
-                <>
-                  <NavLink
-                    to="/profile"
-                    onClick={() => setIsOpen(false)}
-                    className="mt-6 text-gray-700 block"
-                  >
-                    Profile
-                  </NavLink>
-
-                  <Button
-                      onClick={() => {
-                        handleLogout();
-                        setIsOpen(false);
-                      }}
-                      className="mt-2 text-red-500 text-left cursor-pointer "
-                    >
-                      Logout
-                    </Button>
-
-                    
-                </>
-              )}
-            </motion.nav>
-          </>
-        )}
-      </AnimatePresence>
     </header>
   );
 };
