@@ -10,6 +10,57 @@ const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: "7d" });
 };
 
+
+// ------------------ PROFILE FETCH ------------------
+const getProfile = async (req, res) => {
+  try {
+    const user = await userModel.findById(req.user.id).select("-password -verifyToken -verifyTokenExpire");
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    res.status(200).json(user);
+  } catch (error) {
+    console.error("Error fetching profile:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+// ------------------ PROFILE UPDATE ------------------
+// ------------------ PROFILE UPDATE ------------------
+const updateProfile = async (req, res) => {
+  try {
+    const updateData = {};
+
+    if (req.file) {
+      // Set avatar if file uploaded
+      updateData.avatar = `/uploads/${req.file.filename}`;
+    }
+
+    if (req.body.name) {
+      updateData.name = req.body.name;
+    }
+
+    if (Object.keys(updateData).length === 0) {
+      return res.status(400).json({ message: "No data provided to update." });
+    }
+
+    const user = await userModel.findByIdAndUpdate(
+      req.user.id,
+      updateData,
+      { new: true }
+    ).select("-password -verifyToken -verifyTokenExpire");
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.status(200).json(user);
+  } catch (error) {
+    console.error("Error updating profile:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
 // ------------------ SIGNUP ------------------
 const signup = async (req, res) => {
   try {
@@ -211,6 +262,10 @@ const resetPassword = async (req, res) => {
   }
 };
 
+// ------------------ UPDATE PROFILE ------------------
+
+
+
 // ------------------ DELETE USER ------------------
 const deleteUser = async (req, res) => {
   const userId = req.user.id;
@@ -230,4 +285,6 @@ export {
   resetPassword,
   verifyEmail,
   deleteUser,
+  updateProfile,
+  getProfile
 };

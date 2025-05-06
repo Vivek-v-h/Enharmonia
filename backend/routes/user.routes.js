@@ -1,15 +1,26 @@
-import express from 'express';
-import { signup, login, deleteUser, forgotPassword, resetPassword, verifyEmail } from "../controllers/userController.js";
-import protect from '../middleware/authMiddleware.js';
+import express from "express";
+import {
+  signup,
+  login,
+  forgotPassword,
+  resetPassword,
+  verifyEmail,
+  deleteUser,
+  updateProfile,
+  getProfile
+} from "../controllers/userController.js";
+import upload from "../middleware/uploadMiddleware.js";
+import auth from "../middleware/authMiddleware.js";
 
-const userRouter = express.Router();
+const router = express.Router();
 
-userRouter.post('/signup', signup);  // Signup route
-userRouter.post('/login', login);  // Login route
-userRouter.post('/forgot-password', forgotPassword);  // Forgot password route
-userRouter.post('/reset-password/:token', resetPassword);  // Reset password route
+router.post("/signup", signup);
+router.post("/login", login);
+router.post("/forgot-password", forgotPassword);
+router.post("/reset-password/:token", resetPassword);
+router.get("/verify-email/:token", verifyEmail);
+router.get("/profile", auth, getProfile);
+router.put("/update-profile", auth, upload.single("avatar"), updateProfile);
+router.delete("/delete", auth, deleteUser);
 
-userRouter.delete('/delete', protect, deleteUser);  // Delete user route (protected)
-userRouter.get('/verify-email/:token', verifyEmail);  // Email verification route
-
-export default userRouter;
+export default router;

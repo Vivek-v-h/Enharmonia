@@ -9,8 +9,10 @@ const userSchema = new mongoose.Schema({
   verifyTokenExpire: { type: Date },
   resetToken: { type: String },
   resetTokenExpire: { type: Date },
+  avatar: { type: String }, // New field for avatar filename
 });
 
 const userModel = mongoose.models.user || mongoose.model("user", userSchema);
 
 export default userModel;
+

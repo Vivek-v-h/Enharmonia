@@ -5,6 +5,7 @@ import Login_Signup from "./pages/Login_Signup";
 import PrivateRoute from "./components/PrivateRoute"; // If needed for future routes
 import ResetPassword from "./pages/ResetPassword";
 import ForgotPassword from "./pages/ForgotPassword";
+import ProfilePage from "./pages/ProfilePage";
 
 function App() {
   return (
@@ -16,6 +17,7 @@ function App() {
 
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password/:token" element={<ResetPassword />} />
+        <Route path="/profile" element={<ProfilePage/>}/>
 
         {/* Example Protected Route (for later) */}
         {/* <Route
