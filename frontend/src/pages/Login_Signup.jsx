@@ -3,12 +3,14 @@ import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { loginSuccess } from "../redux/authSlice";
+// import ClipLoader from "react-spinners/ClipLoader"; // Uncomment if using react-spinners
 
 const LoginSignup = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [formData, setFormData] = useState({ name: "", email: "", password: "" });
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -24,17 +26,32 @@ const LoginSignup = () => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
+    setMessage("");
+    setError("");
+    setLoading(true);
 
-    // Dummy auth check
-    const isAuthenticated = true;
+    try {
+      const res = await fetch("http://localhost:3000/api/user/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: formData.email, password: formData.password }),
+      });
 
-    if (isAuthenticated) {
-      dispatch(loginSuccess({ email: formData.email, name: "John Doe" }));
-      navigate("/");
-    } else {
-      setError("Invalid credentials");
+      const data = await res.json();
+
+      if (res.ok) {
+        const { token, user } = data;
+        dispatch(loginSuccess({ token, user }));
+        navigate("/");
+      } else {
+        setError(data.message || "Invalid email or password.");
+      }
+    } catch (err) {
+      setError("Server error. Please try again later.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -42,6 +59,7 @@ const LoginSignup = () => {
     e.preventDefault();
     setMessage("");
     setError("");
+    setLoading(true);
 
     try {
       const res = await fetch("http://localhost:3000/api/user/signup", {
@@ -60,14 +78,13 @@ const LoginSignup = () => {
       }
     } catch (err) {
       setError("Server error. Please try again later.");
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <section
-      className="min-h-screen flex items-center justify-center px-4 bg-gradient-to-br from-[#d9e9f2] to-[#f0f9fa] sm:bg-cover sm:bg-center sm:bg-no-repeat sm:bg-[url('/assets/Login_BG.jpg')] "
-
-    >
+    <section className="min-h-screen flex items-center justify-center px-4 bg-gradient-to-br from-[#d9e9f2] to-[#f0f9fa] sm:bg-cover sm:bg-center sm:bg-no-repeat sm:bg-[url('/assets/Login_BG.jpg')]">
       <div className="p-8 rounded-xl shadow-md w-full max-w-md relative overflow-hidden bg-white opacity-95">
         <AnimatePresence mode="wait">
           {isLogin ? (
@@ -90,6 +107,7 @@ const LoginSignup = () => {
                     value={formData.email}
                     onChange={handleChange}
                     required
+                    disabled={loading}
                   />
                 </div>
                 <div>
@@ -102,6 +120,7 @@ const LoginSignup = () => {
                     value={formData.password}
                     onChange={handleChange}
                     required
+                    disabled={loading}
                   />
                 </div>
                 <div className="text-right text-sm text-[#29659e] hover:underline cursor-pointer">
@@ -109,17 +128,17 @@ const LoginSignup = () => {
                 </div>
                 <button
                   type="submit"
-                  className="w-full bg-[#29659e] hover:text-[#2A2ADB] text-white py-2 rounded-lg hover:bg-[#4994DB] transition cursor-pointer"
+                  disabled={loading}
+                  className="w-full bg-[#29659e] text-white py-2 rounded-lg hover:bg-[#4994DB] transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Login
+                  {loading ? "Processing..." : "Login"}
+                  {/* Optionally, use spinner instead of text:
+                  {loading ? <ClipLoader size={20} color="#fff" /> : "Login"} */}
                 </button>
               </form>
               <p className="text-center text-sm text-gray-500 mt-6">
                 Don’t have an account?{" "}
-                <span
-                  onClick={toggleForm}
-                  className="text-[#29659e] hover:underline cursor-pointer"
-                >
+                <span onClick={toggleForm} className="text-[#29659e] hover:underline cursor-pointer">
                   Sign up
                 </span>
               </p>
@@ -145,6 +164,7 @@ const LoginSignup = () => {
                     value={formData.name}
                     onChange={handleChange}
                     required
+                    disabled={loading}
                   />
                 </div>
                 <div>
@@ -157,6 +177,7 @@ const LoginSignup = () => {
                     value={formData.email}
                     onChange={handleChange}
                     required
+                    disabled={loading}
                   />
                 </div>
                 <div>
@@ -169,21 +190,21 @@ const LoginSignup = () => {
                     value={formData.password}
                     onChange={handleChange}
                     required
+                    disabled={loading}
                   />
                 </div>
                 <button
                   type="submit"
-                  className="w-full bg-[#29659e] hover:text-[#2A2ADB] text-white py-2 rounded-lg hover:bg-[#4994DB] transition cursor-pointer"
+                  disabled={loading}
+                  className="w-full bg-[#29659e] text-white py-2 rounded-lg hover:bg-[#4994DB] transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Sign Up
+                  {loading ? "Processing..." : "Sign Up"}
+                  {/* {loading ? <ClipLoader size={20} color="#fff" /> : "Sign Up"} */}
                 </button>
               </form>
               <p className="text-center text-sm text-gray-500 mt-6">
                 Already have an account?{" "}
-                <span
-                  onClick={toggleForm}
-                  className="text-[#29659e] hover:underline cursor-pointer"
-                >
+                <span onClick={toggleForm} className="text-[#29659e] hover:underline cursor-pointer">
                   Login
                 </span>
               </p>

@@ -134,7 +134,7 @@ const Hero = () => {
           variants={imageVariants}
           initial="hidden"
           animate={controls}
-          className="mt-12 lg:mt-0 lg:ml-16 max-w-[550px] w-full"
+          className="hidden md:block mt-12 lg:mt-0 lg:ml-16 max-w-[550px] w-full"
         >
           <img
             src="/image.png"

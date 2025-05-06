@@ -1,11 +1,19 @@
 import React from "react";
-import { Phone, Mail, Instagram } from "@mui/icons-material";
+import {
+  Phone,
+  Mail,
+  Instagram,
+  WhatsApp,
+  Facebook,
+} from "@mui/icons-material";
 
 const Contact = () => {
   return (
     <div>
-      <section className="p-6 md:px-12 flex flex-col md:flex-row bg-blue-50 mt-10 rounded-xl">
-
+      <section
+        id="contactus"
+        className="p-6 md:px-12 flex flex-col md:flex-row bg-blue-50 mt-10 rounded-xl"
+      >
         {/* Left Side */}
         <div className="flex-1 space-y-4 pr-4 flex flex-col justify-start">
           <h2 className="text-2xl font-semibold">Find your best Real Estate</h2>
@@ -38,6 +46,24 @@ const Contact = () => {
             >
               <Instagram fontSize="small" />
               <span>Instagram</span>
+            </a>
+            <a
+              href="https://wa.me/1234567890"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 space-x-2"
+            >
+              <WhatsApp fontSize="small" />
+              <span>WhatsApp</span>
+            </a>
+            <a
+              href="https://facebook.com/yourpage"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center bg-blue-800 text-white px-6 py-2 rounded-lg hover:bg-blue-900 space-x-2"
+            >
+              <Facebook fontSize="small" />
+              <span>Facebook</span>
             </a>
           </div>
 
