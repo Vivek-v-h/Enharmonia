@@ -7,8 +7,9 @@ const userSchema = new mongoose.Schema({
   isVerified: { type: Boolean, default: false },
   verifyToken: { type: String },
   verifyTokenExpire: { type: Date },
+  resetToken: { type: String },
+  resetTokenExpire: { type: Date },
 });
-
 
 const userModel = mongoose.models.user || mongoose.model("user", userSchema);
 

@@ -7,7 +7,11 @@ import { loginSuccess } from "../redux/authSlice";
 
 const LoginSignup = () => {
   const [isLogin, setIsLogin] = useState(true);
-  const [formData, setFormData] = useState({ name: "", email: "", password: "" });
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    password: "",
+  });
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -36,7 +40,10 @@ const LoginSignup = () => {
       const res = await fetch("http://localhost:3000/api/user/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: formData.email, password: formData.password }),
+        body: JSON.stringify({
+          email: formData.email,
+          password: formData.password,
+        }),
       });
 
       const data = await res.json();
@@ -95,10 +102,14 @@ const LoginSignup = () => {
               exit={{ opacity: 0, x: 50 }}
               transition={{ duration: 0.4 }}
             >
-              <h2 className="text-2xl font-semibold text-center text-gray-800 mb-6">Welcome Back</h2>
+              <h2 className="text-2xl font-semibold text-center text-gray-800 mb-6">
+                Welcome Back
+              </h2>
               <form onSubmit={handleLogin} className="space-y-5">
                 <div>
-                  <label className="block mb-1 text-gray-600">Email Address</label>
+                  <label className="block mb-1 text-gray-600">
+                    Email Address
+                  </label>
                   <input
                     type="email"
                     name="email"
@@ -123,7 +134,10 @@ const LoginSignup = () => {
                     disabled={loading}
                   />
                 </div>
-                <div className="text-right text-sm text-[#29659e] hover:underline cursor-pointer">
+                <div
+                  onClick={() => navigate("/forgot-password")}
+                  className="text-right text-sm text-[#29659e] hover:underline cursor-pointer"
+                >
                   Forgot Password?
                 </div>
                 <button
@@ -138,11 +152,16 @@ const LoginSignup = () => {
               </form>
               <p className="text-center text-sm text-gray-500 mt-6">
                 Don’t have an account?{" "}
-                <span onClick={toggleForm} className="text-[#29659e] hover:underline cursor-pointer">
+                <span
+                  onClick={toggleForm}
+                  className="text-[#29659e] hover:underline cursor-pointer"
+                >
                   Sign up
                 </span>
               </p>
-              {error && <p className="text-red-500 text-center mt-4">{error}</p>}
+              {error && (
+                <p className="text-red-500 text-center mt-4">{error}</p>
+              )}
             </motion.div>
           ) : (
             <motion.div
@@ -152,7 +171,9 @@ const LoginSignup = () => {
               exit={{ opacity: 0, x: -50 }}
               transition={{ duration: 0.4 }}
             >
-              <h2 className="text-2xl font-semibold text-center text-gray-800 mb-6">Create Your Account</h2>
+              <h2 className="text-2xl font-semibold text-center text-gray-800 mb-6">
+                Create Your Account
+              </h2>
               <form onSubmit={handleSignup} className="space-y-5">
                 <div>
                   <label className="block mb-1 text-gray-600">Full Name</label>
@@ -168,7 +189,9 @@ const LoginSignup = () => {
                   />
                 </div>
                 <div>
-                  <label className="block mb-1 text-gray-600">Email Address</label>
+                  <label className="block mb-1 text-gray-600">
+                    Email Address
+                  </label>
                   <input
                     type="email"
                     name="email"
@@ -204,12 +227,19 @@ const LoginSignup = () => {
               </form>
               <p className="text-center text-sm text-gray-500 mt-6">
                 Already have an account?{" "}
-                <span onClick={toggleForm} className="text-[#29659e] hover:underline cursor-pointer">
+                <span
+                  onClick={toggleForm}
+                  className="text-[#29659e] hover:underline cursor-pointer"
+                >
                   Login
                 </span>
               </p>
-              {message && <p className="text-green-600 text-center mt-4">{message}</p>}
-              {error && <p className="text-red-500 text-center mt-4">{error}</p>}
+              {message && (
+                <p className="text-green-600 text-center mt-4">{message}</p>
+              )}
+              {error && (
+                <p className="text-red-500 text-center mt-4">{error}</p>
+              )}
             </motion.div>
           )}
         </AnimatePresence>

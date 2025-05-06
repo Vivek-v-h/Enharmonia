@@ -3,6 +3,8 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Landing from "./pages/Landing";
 import Login_Signup from "./pages/Login_Signup";
 import PrivateRoute from "./components/PrivateRoute"; // If needed for future routes
+import ResetPassword from "./pages/ResetPassword";
+import ForgotPassword from "./pages/ForgotPassword";
 
 function App() {
   return (
@@ -11,6 +13,9 @@ function App() {
         <Route path="/" element={<Landing />} />
 
         <Route path="/login-signup" element={<Login_Signup />} />
+
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password/:token" element={<ResetPassword />} />
 
         {/* Example Protected Route (for later) */}
         {/* <Route
