@@ -256,14 +256,14 @@ const PostAd = () => {
       });
       
       // Uncomment this for actual API call
-      // const response = await axios.post(`${API_BASE}/api/ads`, formDataToSend, {
-      //   headers: {
-      //     'Authorization': `Bearer ${token}`,
-      //     'Content-Type': 'multipart/form-data'
-      //   }
-      // });
+      const response = await axios.post("http://localhost:3000/api/ad/create-ad", formDataToSend, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'multipart/form-data'
+        }
+      });
       
-      // console.log("Ad created successfully:", response.data);
+      console.log("Ad created successfully:", response.data);
       
       setSubmitSuccess(true);
       
