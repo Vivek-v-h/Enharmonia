@@ -6,6 +6,7 @@ import PrivateRoute from "./components/PrivateRoute"; // If needed for future ro
 import ResetPassword from "./pages/ResetPassword";
 import ForgotPassword from "./pages/ForgotPassword";
 import ProfilePage from "./pages/ProfilePage";
+import PostAd from "./pages/Postad";
 
 function App() {
   return (
@@ -18,7 +19,7 @@ function App() {
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password/:token" element={<ResetPassword />} />
         <Route path="/profile" element={<ProfilePage/>}/>
-
+        <Route path="/post-ad" element={<PostAd/>}/>
         {/* Example Protected Route (for later) */}
         {/* <Route
           path="/dashboard"

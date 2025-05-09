@@ -88,7 +88,7 @@ const Navbar = () => {
         <NavLink to="/" className="hover:text-blue-600">
           Home
         </NavLink>
-        <NavLink to="#" className="hover:text-blue-600">
+        <NavLink to="/post-ad" className="hover:text-blue-600">
           Post An Ad
         </NavLink>
         <NavLink to="#" className="hover:text-blue-600">
