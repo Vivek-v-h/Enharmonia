@@ -7,6 +7,7 @@ import ResetPassword from "./pages/ResetPassword";
 import ForgotPassword from "./pages/ForgotPassword";
 import ProfilePage from "./pages/ProfilePage";
 import PostAd from "./pages/Postad";
+import Listings from "./pages/Listings";
 
 function App() {
   return (
@@ -20,6 +21,7 @@ function App() {
         <Route path="/reset-password/:token" element={<ResetPassword />} />
         <Route path="/profile" element={<ProfilePage/>}/>
         <Route path="/post-ad" element={<PostAd/>}/>
+        <Route path="/listings" element={<Listings/>}/>
         {/* Example Protected Route (for later) */}
         {/* <Route
           path="/dashboard"
