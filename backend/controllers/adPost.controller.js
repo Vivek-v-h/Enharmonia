@@ -2,8 +2,15 @@ import AdModel from "../models/adModel.js";
 import { v2 as cloudinary } from 'cloudinary';
 import multer from 'multer';
 import path from 'path';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
 
-// Configure Cloudinary (you'll need to set these in your environment variables)
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+
+
+// Configure Cloudinary
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
@@ -50,100 +57,126 @@ const uploadToCloudinary = async (files) => {
 // Create a new ad
 const createAd = async (req, res) => {
   try {
-    // First handle the file uploads
+    // Handle file uploads
     upload(req, res, async (err) => {
       if (err) {
+        console.error("File upload error:", err);
         return res.status(400).json({ 
           success: false, 
-          message: err.message 
+          message: err instanceof multer.MulterError 
+            ? `File upload error: ${err.message}` 
+            : "File upload failed"
         });
       }
 
+      // Check if files were uploaded
       if (!req.files || req.files.length === 0) {
         return res.status(400).json({ 
           success: false, 
-          message: 'At least one photo is required' 
+          message: "At least one photo is required" 
         });
       }
 
-      // Upload photos to Cloudinary
-      const photoUrls = await uploadToCloudinary(req.files);
-      
-      // Prepare the ad data
-      const {
-        listingType,
-        headline,
-        description,
-        location,
-        coordinates,
-        price,
-        distanceFrom,
-        stayLength,
-        propertyType,
-        amenities,
-        tenantPreferred,
-        householdPreferences,
-        tenantOther
-      } = req.body;
+      try {
+        // Upload photos to Cloudinary
+        const photoUrls = await uploadToCloudinary(req.files);
+        
+        // Parse request body
+        const {
+          userId,
+          listingType,
+          headline,
+          description,
+          location,
+          coordinates,
+          price,
+          distanceFrom,
+          stayLength,
+          propertyType,
+          amenities,
+          tenantPreferred,
+          householdPreferences,
+          tenantOther
+        } = req.body;
 
-      // Create new ad
-      const newAd = new AdModel({
-        userId: req.user.id,
-        listingType,
-        headline,
-        description,
-        location,
-        coordinates: coordinates ? JSON.parse(coordinates) : null,
-        price: parseFloat(price),
-        distanceFrom: distanceFrom ? JSON.parse(distanceFrom) : {},
-        stayLength: stayLength ? JSON.parse(stayLength) : {},
-        propertyType,
-        amenities: amenities ? JSON.parse(amenities) : [],
-        tenantPreferred: tenantPreferred ? JSON.parse(tenantPreferred) : [],
-        householdPreferences: householdPreferences ? JSON.parse(householdPreferences) : [],
-        tenantOther: tenantOther || "",
-        photos: photoUrls
-      });
+        // Validate required fields
+        if (!userId || !listingType || !headline || !description || 
+            !location || !price || !propertyType) {
+          return res.status(400).json({
+            success: false,
+            message: "Missing required fields"
+          });
+        }
 
-      // Save the ad to database
-      const savedAd = await newAd.save();
+        // Create new ad
+        const newAd = new AdModel({
+          userId,
+          listingType,
+          headline,
+          description,
+          location,
+          coordinates: coordinates ? JSON.parse(coordinates) : null,
+          price: parseFloat(price),
+          distanceFrom: distanceFrom ? JSON.parse(distanceFrom) : {},
+          stayLength: stayLength ? JSON.parse(stayLength) : {},
+          propertyType,
+          amenities: amenities ? JSON.parse(amenities) : [],
+          tenantPreferred: tenantPreferred ? JSON.parse(tenantPreferred) : [],
+          householdPreferences: householdPreferences ? JSON.parse(householdPreferences) : [],
+          tenantOther: tenantOther || "",
+          photos: photoUrls
+        });
 
-      res.status(201).json({
-        success: true,
-        message: 'Ad created successfully',
-        ad: savedAd
-      });
+        // Save to database
+        const savedAd = await newAd.save();
+
+        return res.status(201).json({
+          success: true,
+          message: "Ad created successfully",
+          ad: savedAd
+        });
+      } catch (parseError) {
+        console.error("Error processing ad:", parseError);
+        return res.status(400).json({
+          success: false,
+          message: "Error processing ad data",
+          error: parseError.message
+        });
+      }
     });
   } catch (error) {
-    console.error('Error creating ad:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Internal server error',
-      error: error.message 
+    console.error("Server error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: error.message
     });
   }
 };
 
+
 // Get all ads
 const getAllAds = async (req, res) => {
   try {
-    const ads = await AdModel.find({ status: 'active' })
+    // Only get ads where userId is not null
+    const ads = await AdModel.find({ userId: { $ne: null } })
       .populate('userId', 'name avatar')
       .sort({ createdAt: -1 });
-    
+
     res.status(200).json({
       success: true,
       count: ads.length,
       ads
     });
   } catch (error) {
-    console.error('Error fetching ads:', error);
+    console.error('Error fetching ads:', error.stack); // Detailed error for debugging
     res.status(500).json({ 
       success: false, 
       message: 'Internal server error' 
     });
   }
 };
+
 
 // Get ads by user
 const getUserAds = async (req, res) => {
@@ -275,12 +308,12 @@ const deleteAd = async (req, res) => {
 
     // Delete photos from Cloudinary
     const deletePhotoPromises = ad.photos.map(url => {
-      const publicId = url.split('/').pop().split('.')[0]; // assumes format ends with publicId.extension
+      const publicId = url.split('/').pop().split('.')[0];
       return cloudinary.uploader.destroy(publicId, { resource_type: 'image' });
     });
     await Promise.all(deletePhotoPromises);
     
-    await ad.remove();
+    await ad.deleteOne();
     
     res.status(200).json({
       success: true,
@@ -295,11 +328,63 @@ const deleteAd = async (req, res) => {
   }
 };
 
+// Add to wishlist
+const addToWishlist = async (req, res) => {
+  try {
+    const ad = await AdModel.findById(req.params.id);
+    if (!ad) {
+      return res.status(404).json({ message: 'Ad not found' });
+    }
+
+    // Check if already in wishlist
+    const user = await UserModel.findById(req.user.id);
+    if (user.wishlist.includes(req.params.id)) {
+      return res.status(400).json({ message: 'Ad already in wishlist' });
+    }
+
+    user.wishlist.push(req.params.id);
+    await user.save();
+
+    res.status(200).json({ message: 'Added to wishlist' });
+  } catch (error) {
+    console.error('Error adding to wishlist:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+// Remove from wishlist
+const removeFromWishlist = async (req, res) => {
+  try {
+    const user = await UserModel.findById(req.user.id);
+    user.wishlist = user.wishlist.filter(id => id.toString() !== req.params.id);
+    await user.save();
+
+    res.status(200).json({ message: 'Removed from wishlist' });
+  } catch (error) {
+    console.error('Error removing from wishlist:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+// Get wishlist
+const getWishlist = async (req, res) => {
+  try {
+    const user = await UserModel.findById(req.user.id).populate('wishlist');
+    res.status(200).json(user.wishlist);
+  } catch (error) {
+    console.error('Error fetching wishlist:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
 export {
   createAd,
   getAllAds,
   getUserAds,
   getAd,
   updateAd,
-  deleteAd
+  deleteAd,
+  addToWishlist,
+  removeFromWishlist,
+  getWishlist
 };

@@ -7,3 +7,61 @@
 button {
   cursor: pointer !important;
 }
+/* Main slider styles */
+input[type='range'].range-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  width: 100%;
+  height: 2rem;
+  position: absolute; /* Position the thumb within the track */
+  pointer-events: none; /* Disable pointer events on the main track */
+}
+
+/* Thumb styles */
+input[type='range'].range-thumb::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  background-color: #4f46e5;
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 0 0 2px white, 0 0 0 4px #4f46e5;
+  position: relative;
+  pointer-events: auto; /* Enable pointer events on the thumb */
+}
+
+/* For Firefox */
+input[type='range'].range-thumb::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  background-color: #4f46e5;
+  border-radius: 50%;
+  cursor: pointer;
+  border: none;
+  position: relative;
+  pointer-events: auto; /* Enable pointer events on the thumb */
+}
+
+/* Track background */
+input[type='range'] {
+  pointer-events: none; /* Disable pointer events on the track */
+  background: transparent;
+  position: absolute;
+  width: 100%;
+  height: 2px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 10;
+}
+
+input[type='range'].range-thumb::-webkit-slider-runnable-track {
+  background-color: transparent;
+  border: none;
+}
+
+input[type='range'].range-thumb::-moz-range-track {
+  background-color: transparent;
+  border: none;
+}
