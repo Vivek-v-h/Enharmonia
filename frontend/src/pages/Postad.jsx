@@ -10,7 +10,7 @@ import {
   FaUser, FaBath
 } from "react-icons/fa";
 import Alert from "../components/PostingSuccess";
-
+import Navbar from "../components/Navbar"
 const API_BASE = "http://localhost:3000";
 
 const PostAd = () => {
@@ -235,12 +235,15 @@ const PostAd = () => {
   }
 
   return (
+    <div className="bg-gradient-to-br from-[#d9e9f2] to-[#f0f9fa]">
+    <Navbar/>
     <motion.div 
       className="max-w-4xl mx-auto p-6 mt-8 bg-white rounded-3xl shadow-lg"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6 }}
     >
+      
       <motion.h1 className="text-3xl font-bold text-gray-800 mb-6">
         Post an Ad
       </motion.h1>
@@ -617,6 +620,7 @@ const PostAd = () => {
 
       <Alert show={showAlert} onClose={() => setShowAlert(false)} />
     </motion.div>
+    </div>
   );
 };
 

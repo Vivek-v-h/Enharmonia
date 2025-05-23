@@ -8,6 +8,8 @@ import ForgotPassword from "./pages/ForgotPassword";
 import ProfilePage from "./pages/ProfilePage";
 import PostAd from "./pages/Postad";
 import Listings from "./pages/Listings";
+import ContactPage from "./pages/ContactPage";
+import Listing from "./pages/Listing";
 
 function App() {
   return (
@@ -22,6 +24,8 @@ function App() {
         <Route path="/profile" element={<ProfilePage/>}/>
         <Route path="/post-ad" element={<PostAd/>}/>
         <Route path="/listings" element={<Listings/>}/>
+        <Route path="/listing/:id" element={<Listing />} />
+        <Route path="/ContactPage" element={<ContactPage/>}/>
         {/* Example Protected Route (for later) */}
         {/* <Route
           path="/dashboard"

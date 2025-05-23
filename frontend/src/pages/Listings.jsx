@@ -11,16 +11,18 @@ import {
   FaMapMarkerAlt,
   FaFilter,
 } from "react-icons/fa";
-import ImageSlider from "../components/ImageSlider";
+import { useNavigate } from "react-router-dom";
+import Navbar from "../components/Navbar";
 
 const Listings = () => {
-  const [activeTab, setActiveTab] = useState("rooms_wanted");
+  const [activeTab, setActiveTab] = useState("all");
   const [locationQuery, setLocationQuery] = useState("");
   const [listings, setListings] = useState([]);
   const [loading, setLoading] = useState(false);
   const [showFilters, setShowFilters] = useState(window.innerWidth >= 1024);
   const [sortBy, setSortBy] = useState("");
   const [wishlist, setWishlist] = useState([]);
+  const navigate = useNavigate();
 
   const [filters, setFilters] = useState({
     rentMin: 0,
@@ -28,9 +30,9 @@ const Listings = () => {
     stayMin: 1,
     stayMax: 24,
     propertyTypes: [],
-    roomAmenities: [],
-    tenantTypes: [],
-    householdPrefs: [],
+    amenities: [],
+    tenantPreferred: [],
+    householdPreferences: [],
   });
 
   const fetchListings = async (coords = null) => {
@@ -38,31 +40,23 @@ const Listings = () => {
     try {
       const params = {
         location: locationQuery,
+        ...(activeTab !== "all" && { listingType: activeTab }),
+        sortBy,
         ...filters,
-        listingType: activeTab,
-        sortBy
       };
-      
+
       if (coords) {
-        params.coords = coords;
+        params.latitude = coords.lat;
+        params.longitude = coords.lng;
       }
-      
-      const res = await axios.get("http://localhost:3000/api/ad/getall", { params });
-      setListings(res.data.ads);
+
+      const res = await axios.get("http://localhost:3000/api/ad/getall", {
+        params,
+      });
+      setListings(res.data.ads || []);
     } catch (err) {
       console.error("Error fetching listings", err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchAllListings = async () => {
-    setLoading(true);
-    try {
-      const res = await axios.get("http://localhost:3000/api/ad/getall");
-      setListings(res.data.ads);
-    } catch (err) {
-      console.error("Error fetching all listings", err);
+      setListings([]);
     } finally {
       setLoading(false);
     }
@@ -72,10 +66,13 @@ const Listings = () => {
     try {
       const token = localStorage.getItem("token");
       if (token) {
-        const res = await axios.get("http://localhost:3000/api/ads/wishlist/mine", {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        setWishlist(res.data.map(item => item._id));
+        const res = await axios.get(
+          "http://localhost:3000/api/ads/wishlist/mine",
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+        setWishlist(res.data.map((item) => item._id));
       }
     } catch (err) {
       console.error("Error fetching wishlist", err);
@@ -83,11 +80,11 @@ const Listings = () => {
   };
 
   const handleCheckbox = (category, value) => {
-    setFilters(prev => ({
+    setFilters((prev) => ({
       ...prev,
       [category]: prev[category].includes(value)
-        ? prev[category].filter(item => item !== value)
-        : [...prev[category], value]
+        ? prev[category].filter((item) => item !== value)
+        : [...prev[category], value],
     }));
   };
 
@@ -120,14 +117,21 @@ const Listings = () => {
       }
 
       if (wishlist.includes(listingId)) {
-        await axios.delete(`http://localhost:3000/api/ads/${listingId}/wishlist`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        setWishlist(wishlist.filter(id => id !== listingId));
+        await axios.delete(
+          `http://localhost:3000/api/ads/${listingId}/wishlist`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+        setWishlist(wishlist.filter((id) => id !== listingId));
       } else {
-        await axios.post(`http://localhost:3000/api/ads/${listingId}/wishlist`, {}, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        await axios.post(
+          `http://localhost:3000/api/ads/${listingId}/wishlist`,
+          {},
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
         setWishlist([...wishlist, listingId]);
       }
     } catch (err) {
@@ -135,10 +139,14 @@ const Listings = () => {
     }
   };
 
+  const handleListingClick = (listingId) => {
+    navigate(`/listing/${listingId}`);
+  };
+
   useEffect(() => {
-    fetchAllListings();
+    fetchListings();
     fetchWishlist();
-  }, []);
+  }, [activeTab, sortBy, filters]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -146,24 +154,21 @@ const Listings = () => {
         fetchListings();
       }
     }, 500);
-    
+
     return () => clearTimeout(timer);
   }, [locationQuery]);
-
-  useEffect(() => {
-    fetchListings();
-  }, [activeTab, sortBy, filters]);
 
   useEffect(() => {
     const handleResize = () => {
       setShowFilters(window.innerWidth >= 1024);
     };
-    
+
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
   const tabs = [
+    { label: "All Listings", value: "all" },
     { label: "Rooms Wanted", value: "rooms_wanted" },
     { label: "Whole Building", value: "whole_building" },
     { label: "Rooms to Rent", value: "rooms_to_rent" },
@@ -171,12 +176,102 @@ const Listings = () => {
   ];
 
   const propertyTypes = ["rooms", "studio_flat", "house", "other"];
-  const amenities = ["furnished", "unfurnished", "double_room", "single_room", "ensuite"];
+  const amenities = [
+    "furnished",
+    "unfurnished",
+    "double_room",
+    "single_room",
+    "ensuite",
+  ];
   const tenantTypes = ["student", "professional", "family", "other"];
-  const householdPrefs = ["vegetarian", "non_smoker", "no_alcohol", "no_pets", "no_parking", "disabled_friendly"];
+  const householdPrefs = [
+    "vegetarian",
+    "non_smoker",
+    "no_alcohol",
+    "no_pets",
+    "no_parking",
+    "disabled_friendly",
+  ];
+
+  // ImageSlider component integrated directly
+  const ImageSlider = ({ images }) => {
+    const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
+    const nextImage = () => {
+      setCurrentImageIndex((prev) =>
+        prev === images.length - 1 ? 0 : prev + 1
+      );
+    };
+
+    const prevImage = () => {
+      setCurrentImageIndex((prev) =>
+        prev === 0 ? images.length - 1 : prev - 1
+      );
+    };
+
+    return (
+      <div className="relative h-full w-full overflow-hidden">
+        <AnimatePresence mode="wait">
+          <motion.img
+            key={currentImageIndex}
+            src={images[currentImageIndex]}
+            alt={`Property ${currentImageIndex + 1}`}
+            className="w-full h-full object-cover"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.5 }}
+          />
+        </AnimatePresence>
+
+        {/* Navigation arrows */}
+        {images.length > 1 && (
+          <>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                prevImage();
+              }}
+              className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white p-1 rounded-full hover:bg-opacity-70 transition"
+            >
+              &lt;
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                nextImage();
+              }}
+              className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white p-1 rounded-full hover:bg-opacity-70 transition"
+            >
+              &gt;
+            </button>
+
+            {/* Image indicators */}
+            <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 flex gap-1">
+              {images.map((_, index) => (
+                <button
+                  key={index}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setCurrentImageIndex(index);
+                  }}
+                  className={`w-2 h-2 rounded-full ${
+                    currentImageIndex === index
+                      ? "bg-white"
+                      : "bg-white bg-opacity-50"
+                  }`}
+                />
+              ))}
+            </div>
+          </>
+        )}
+      </div>
+    );
+  };
 
   return (
-    <div className="p-6 space-y-6 bg-gradient-to-br from-[#d9e9f2] to-[#f0f9fa] min-h-screen">
+    <div className="pt-0 p-6 space-y-6 bg-gradient-to-br from-[#d9e9f2] to-[#f0f9fa] min-h-screen">
+      <Navbar />
       <h1 className="text-3xl font-bold text-center text-gray-900">
         Browse Listings
       </h1>
@@ -228,7 +323,7 @@ const Listings = () => {
         </button>
       </div>
 
-      {/* Sort + Mobile Filter Toggle */}
+      {/* Mobile Filter Toggle */}
       <div className="flex flex-wrap justify-center items-center gap-4 lg:hidden mt-2">
         <select
           value={sortBy}
@@ -264,6 +359,22 @@ const Listings = () => {
               exit={{ opacity: 0, height: 0 }}
               transition={{ duration: 0.3 }}
             >
+              {/* Sort Options - Only visible on larger screens */}
+              <div className="hidden lg:block">
+                <h2 className="font-semibold mb-2">Sort By</h2>
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg p-2 text-gray-800"
+                >
+                  <option value="">Default</option>
+                  <option value="price-asc">Price: Low to High</option>
+                  <option value="price-desc">Price: High to Low</option>
+                  <option value="stay-asc">Stay: Low to High</option>
+                  <option value="stay-desc">Stay: High to Low</option>
+                </select>
+              </div>
+
               {/* Rent Range */}
               <div>
                 <h2 className="font-semibold mb-2">Rent Range (£)</h2>
@@ -272,7 +383,7 @@ const Listings = () => {
                     type="number"
                     value={filters.rentMin}
                     onChange={(e) =>
-                      setFilters(f => ({
+                      setFilters((f) => ({
                         ...f,
                         rentMin: Math.min(+e.target.value, f.rentMax),
                       }))
@@ -285,7 +396,7 @@ const Listings = () => {
                     type="number"
                     value={filters.rentMax}
                     onChange={(e) =>
-                      setFilters(f => ({
+                      setFilters((f) => ({
                         ...f,
                         rentMax: Math.max(+e.target.value, f.rentMin),
                       }))
@@ -305,7 +416,7 @@ const Listings = () => {
                     type="number"
                     value={filters.stayMin}
                     onChange={(e) =>
-                      setFilters(f => ({
+                      setFilters((f) => ({
                         ...f,
                         stayMin: Math.min(+e.target.value, f.stayMax),
                       }))
@@ -318,7 +429,7 @@ const Listings = () => {
                     type="number"
                     value={filters.stayMax}
                     onChange={(e) =>
-                      setFilters(f => ({
+                      setFilters((f) => ({
                         ...f,
                         stayMax: Math.max(+e.target.value, f.stayMin),
                       }))
@@ -333,7 +444,7 @@ const Listings = () => {
               {/* Property Type */}
               <div>
                 <h2 className="font-semibold mb-2">Property Type</h2>
-                {propertyTypes.map(type => (
+                {propertyTypes.map((type) => (
                   <label key={type} className="block mb-2">
                     <input
                       type="checkbox"
@@ -341,7 +452,12 @@ const Listings = () => {
                       onChange={() => handleCheckbox("propertyTypes", type)}
                       className="mr-2"
                     />
-                    {type.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
+                    {type
+                      .split("_")
+                      .map(
+                        (word) => word.charAt(0).toUpperCase() + word.slice(1)
+                      )
+                      .join(" ")}
                   </label>
                 ))}
               </div>
@@ -349,15 +465,20 @@ const Listings = () => {
               {/* Amenities */}
               <div>
                 <h2 className="font-semibold mb-2">Amenities</h2>
-                {amenities.map(amenity => (
+                {amenities.map((amenity) => (
                   <label key={amenity} className="block mb-2">
                     <input
                       type="checkbox"
-                      checked={filters.roomAmenities.includes(amenity)}
-                      onChange={() => handleCheckbox("roomAmenities", amenity)}
+                      checked={filters.amenities.includes(amenity)}
+                      onChange={() => handleCheckbox("amenities", amenity)}
                       className="mr-2"
                     />
-                    {amenity.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
+                    {amenity
+                      .split("_")
+                      .map(
+                        (word) => word.charAt(0).toUpperCase() + word.slice(1)
+                      )
+                      .join(" ")}
                   </label>
                 ))}
               </div>
@@ -365,12 +486,12 @@ const Listings = () => {
               {/* Tenant Preferred */}
               <div>
                 <h2 className="font-semibold mb-2">Tenant Preferred</h2>
-                {tenantTypes.map(type => (
+                {tenantTypes.map((type) => (
                   <label key={type} className="block mb-2">
                     <input
                       type="checkbox"
-                      checked={filters.tenantTypes.includes(type)}
-                      onChange={() => handleCheckbox("tenantTypes", type)}
+                      checked={filters.tenantPreferred.includes(type)}
+                      onChange={() => handleCheckbox("tenantPreferred", type)}
                       className="mr-2"
                     />
                     {type.charAt(0).toUpperCase() + type.slice(1)}
@@ -381,15 +502,22 @@ const Listings = () => {
               {/* Household Preferences */}
               <div>
                 <h2 className="font-semibold mb-2">Household Preferences</h2>
-                {householdPrefs.map(pref => (
+                {householdPrefs.map((pref) => (
                   <label key={pref} className="block mb-2">
                     <input
                       type="checkbox"
-                      checked={filters.householdPrefs.includes(pref)}
-                      onChange={() => handleCheckbox("householdPrefs", pref)}
+                      checked={filters.householdPreferences.includes(pref)}
+                      onChange={() =>
+                        handleCheckbox("householdPreferences", pref)
+                      }
                       className="mr-2"
                     />
-                    {pref.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
+                    {pref
+                      .split("_")
+                      .map(
+                        (word) => word.charAt(0).toUpperCase() + word.slice(1)
+                      )
+                      .join(" ")}
                   </label>
                 ))}
               </div>
@@ -400,76 +528,118 @@ const Listings = () => {
         {/* Listings */}
         <div className="w-full lg:w-[82%] space-y-6">
           {loading ? (
-            <div className="text-center text-gray-600 py-10">Loading listings...</div>
-          ) : listings.length === 0 ? (
-            <div className="text-center text-gray-600 py-10">No listings found.</div>
+            <div className="text-center text-gray-600 py-10">
+              Loading listings...
+            </div>
+          ) : listings && listings.length === 0 ? (
+            <div className="text-center text-gray-600 py-10">
+              No listings found.
+            </div>
           ) : (
-            listings.map((listing) => (
-              <motion.div
-                key={listing._id}
-                className="border rounded-2xl p-4 shadow-2xl bg-white space-y-4"
-                whileHover={{ scale: 1.02 }}
-                transition={{ duration: 0.3 }}
-              >
-                <div className="w-full h-56 bg-gray-200 rounded-xl mb-2 flex items-center justify-center overflow-hidden">
-                  <ImageSlider images={listing.photos || []} />
-                </div>
-
-                <h3 className="text-xl font-semibold text-gray-900">
-                  {listing.headline}
-                </h3>
-                <p className="text-gray-700">{listing.description}</p>
-                <p className="text-lg font-bold text-indigo-700">
-                  £{listing.price}/month
-                </p>
-
-                <div className="flex space-x-4 text-gray-600">
-                  {[
-                    { icon: <FaSubway />, value: listing.distanceFrom?.tube, label: "tube" },
-                    { icon: <FaBus />, value: listing.distanceFrom?.bus, label: "bus" },
-                    { icon: <FaTrain />, value: listing.distanceFrom?.railway, label: "train" },
-                    { icon: <FaCar />, value: listing.distanceFrom?.metro, label: "car" },
-                  ].map(
-                    (item, i) =>
-                      item.value > 0 && (
-                        <div
-                          key={i}
-                          className="relative group flex items-center space-x-1"
-                        >
-                          {item.icon}
-                          <span>{item.value}mi</span>
-                          <div className="absolute bottom-full mb-1 hidden group-hover:block bg-black text-white text-xs p-1 rounded shadow">
-                            Distance from {item.label} is {item.value} miles
-                          </div>
-                        </div>
-                      )
-                  )}
-                </div>
-
-                <div className="flex flex-wrap gap-2">
-                  {listing.amenities?.map((amenity, i) => (
-                    <div
-                      key={i}
-                      className="bg-gray-100 px-3 py-1 rounded-full text-sm text-gray-800 shadow"
-                    >
-                      {amenity.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
-                    </div>
-                  ))}
-                </div>
-
-                <button 
-                  onClick={() => toggleWishlist(listing._id)}
-                  className={`mt-2 flex items-center gap-2 ${
-                    wishlist.includes(listing._id) 
-                      ? "text-red-500 hover:text-red-700" 
-                      : "text-gray-500 hover:text-gray-700"
-                  }`}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {listings.map((listing) => (
+                <motion.div
+                  key={listing._id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="border rounded-2xl p-4 shadow-2xl bg-white space-y-4 cursor-pointer"
+                  whileHover={{ scale: 1.02 }}
+                  onClick={() => handleListingClick(listing._id)}
                 >
-                  <FaHeart /> 
-                  {wishlist.includes(listing._id) ? "In Wishlist" : "Add to Wishlist"}
-                </button>
-              </motion.div>
-            ))
+                  <div className="w-full h-56 bg-gray-200 rounded-xl mb-2 flex items-center justify-center overflow-hidden">
+                    {listing.photos && listing.photos.length > 0 ? (
+                      <ImageSlider images={listing.photos} />
+                    ) : (
+                      <div className="text-gray-500">No images available</div>
+                    )}
+                  </div>
+
+                  <h3 className="text-xl font-semibold text-gray-900">
+                    {listing.headline || "No title provided"}
+                  </h3>
+                  <p className="text-gray-700 line-clamp-2">
+                    {listing.description || "No description provided"}
+                  </p>
+                  <p className="text-lg font-bold text-indigo-700">
+                    £{listing.price || "N/A"}/month
+                  </p>
+
+                  <div className="flex space-x-4 text-gray-600">
+                    {[
+                      {
+                        icon: <FaSubway />,
+                        value: listing.distanceFrom?.tube,
+                        label: "tube",
+                      },
+                      {
+                        icon: <FaBus />,
+                        value: listing.distanceFrom?.bus,
+                        label: "bus",
+                      },
+                      {
+                        icon: <FaTrain />,
+                        value: listing.distanceFrom?.railway,
+                        label: "train",
+                      },
+                      {
+                        icon: <FaCar />,
+                        value: listing.distanceFrom?.metro,
+                        label: "car",
+                      },
+                    ].map(
+                      (item, i) =>
+                        item.value > 0 && (
+                          <div
+                            key={i}
+                            className="relative group flex items-center space-x-1"
+                          >
+                            {item.icon}
+                            <span>{item.value}mi</span>
+                            <div className="absolute bottom-full mb-1 hidden group-hover:block bg-black text-white text-xs p-1 rounded shadow">
+                              Distance from {item.label} is {item.value} miles
+                            </div>
+                          </div>
+                        )
+                    )}
+                  </div>
+
+                  <div className="flex flex-wrap gap-2">
+                    {listing.amenities?.map((amenity, i) => (
+                      <div
+                        key={i}
+                        className="bg-gray-100 px-3 py-1 rounded-full text-sm text-gray-800 shadow"
+                      >
+                        {amenity
+                          .split("_")
+                          .map(
+                            (word) =>
+                              word.charAt(0).toUpperCase() + word.slice(1)
+                          )
+                          .join(" ")}
+                      </div>
+                    ))}
+                  </div>
+
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleWishlist(listing._id);
+                    }}
+                    className={`mt-2 flex items-center gap-2 ${
+                      wishlist.includes(listing._id)
+                        ? "text-red-500 hover:text-red-700"
+                        : "text-gray-500 hover:text-gray-700"
+                    }`}
+                  >
+                    <FaHeart />
+                    {wishlist.includes(listing._id)
+                      ? "In Wishlist"
+                      : "Add to Wishlist"}
+                  </button>
+                </motion.div>
+              ))}
+            </div>
           )}
         </div>
       </div>

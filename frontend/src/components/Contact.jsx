@@ -12,7 +12,7 @@ const Contact = () => {
     <div>
       <section
         id="contactus"
-        className="p-6 md:px-12 flex flex-col md:flex-row bg-blue-50 mt-10 rounded-xl"
+        className="p-6 md:px-12 flex flex-col md:flex-row bg-blue-50  rounded-xl"
       >
         {/* Left Side */}
         <div className="flex-1 space-y-4 pr-4 flex flex-col justify-start">

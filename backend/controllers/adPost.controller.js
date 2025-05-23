@@ -158,10 +158,103 @@ const createAd = async (req, res) => {
 // Get all ads
 const getAllAds = async (req, res) => {
   try {
-    // Only get ads where userId is not null
-    const ads = await AdModel.find({ userId: { $ne: null } })
+    const {
+      location,
+      listingType,
+      sortBy,
+      rentMin = 0,
+      rentMax = 5000,
+      stayMin = 1,
+      stayMax = 24,
+      propertyTypes = [],
+      amenities = [],
+      tenantPreferred = [],
+      householdPreferences = [],
+      latitude,
+      longitude
+    } = req.query;
+
+    // Build query
+    const query = { userId: { $ne: null } };
+
+    if (listingType) query.listingType = listingType;
+    
+    // Price range
+    query.price = { $gte: Number(rentMin), $lte: Number(rentMax) };
+    
+    // Stay length range
+    query['stayLength.min'] = { $gte: Number(stayMin) };
+    query['stayLength.max'] = { $lte: Number(stayMax) };
+    
+    // Property types
+    if (propertyTypes.length > 0) {
+      query.propertyType = { $in: propertyTypes };
+    }
+    
+    // Amenities
+    if (amenities.length > 0) {
+      query.amenities = { $all: amenities };
+    }
+    
+    // Tenant preferences
+    if (tenantPreferred.length > 0) {
+      query.tenantPreferred = { $in: tenantPreferred };
+    }
+    
+    // Household preferences
+    if (householdPreferences.length > 0) {
+      query.householdPreferences = { $in: householdPreferences };
+    }
+    
+    // Location search
+    if (location) {
+      query.$or = [
+        { location: { $regex: location, $options: 'i' } },
+        { headline: { $regex: location, $options: 'i' } },
+        { description: { $regex: location, $options: 'i' } }
+      ];
+    }
+
+    // Build sort
+    let sort = {};
+    if (sortBy) {
+      switch (sortBy) {
+        case 'price-asc':
+          sort.price = 1;
+          break;
+        case 'price-desc':
+          sort.price = -1;
+          break;
+        case 'stay-asc':
+          sort['stayLength.min'] = 1;
+          break;
+        case 'stay-desc':
+          sort['stayLength.min'] = -1;
+          break;
+        default:
+          sort.createdAt = -1;
+      }
+    } else {
+      sort.createdAt = -1;
+    }
+
+    // Geo location search
+    if (latitude && longitude) {
+      // This is a simplified approach - for production you'd want to use MongoDB's geospatial queries
+      query.coordinates = {
+        $near: {
+          $geometry: {
+            type: "Point",
+            coordinates: [longitude, latitude]
+          },
+          $maxDistance: 10000 // 10km radius
+        }
+      };
+    }
+
+    const ads = await AdModel.find(query)
       .populate('userId', 'name avatar')
-      .sort({ createdAt: -1 });
+      .sort(sort);
 
     res.status(200).json({
       success: true,
@@ -169,10 +262,11 @@ const getAllAds = async (req, res) => {
       ads
     });
   } catch (error) {
-    console.error('Error fetching ads:', error.stack); // Detailed error for debugging
+    console.error('Error fetching ads:', error);
     res.status(500).json({ 
       success: false, 
-      message: 'Internal server error' 
+      message: 'Internal server error',
+      error: error.message 
     });
   }
 };
@@ -336,7 +430,6 @@ const addToWishlist = async (req, res) => {
       return res.status(404).json({ message: 'Ad not found' });
     }
 
-    // Check if already in wishlist
     const user = await UserModel.findById(req.user.id);
     if (user.wishlist.includes(req.params.id)) {
       return res.status(400).json({ message: 'Ad already in wishlist' });
@@ -352,7 +445,6 @@ const addToWishlist = async (req, res) => {
   }
 };
 
-// Remove from wishlist
 const removeFromWishlist = async (req, res) => {
   try {
     const user = await UserModel.findById(req.user.id);
@@ -366,10 +458,14 @@ const removeFromWishlist = async (req, res) => {
   }
 };
 
-// Get wishlist
 const getWishlist = async (req, res) => {
   try {
-    const user = await UserModel.findById(req.user.id).populate('wishlist');
+    const user = await UserModel.findById(req.user.id)
+      .populate({
+        path: 'wishlist',
+        populate: { path: 'userId', select: 'name avatar' }
+      });
+      
     res.status(200).json(user.wishlist);
   } catch (error) {
     console.error('Error fetching wishlist:', error);

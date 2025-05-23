@@ -77,7 +77,7 @@ const Navbar = () => {
         <div className="flex-1 text-center md:text-left font-bold text-lg cursor-pointer">
           <a href="/">
             <img
-              src="./assets/enharmonia_page_header.png"
+              src="/assets/enharmonia_page_header.png"
               alt="logo of enharmonia properties"
             />
           </a>
@@ -97,14 +97,13 @@ const Navbar = () => {
           <NavLink to="/listings" className="hover:text-blue-600">
             Find Properties
           </NavLink>
-          <Link
-            to="contactus"
-            smooth={true}
-            duration={500}
-            className="hover:text-blue-600 cursor-pointer"
-          >
-            Contact Us
-          </Link>
+          <NavLink
+              to="/ContactPage"
+              onClick={() => setIsOpen(false)}
+              className="hover:text-blue-600"
+            >
+              Contact Us
+            </NavLink>
         </nav>
 
         {/* Avatar Section */}
@@ -199,15 +198,13 @@ const Navbar = () => {
             >
               Find Properties
             </NavLink>
-            <Link
-              to="contactus"
-              smooth={true}
-              duration={500}
+            <NavLink
+              to="/ContactPage"
               onClick={() => setIsOpen(false)}
-              className="hover:text-blue-600 cursor-pointer"
+              className="hover:text-blue-600"
             >
               Contact Us
-            </Link>
+            </NavLink>
             {!isAuthenticated && (
               <NavLink to="/login-signup" onClick={() => setIsOpen(false)}>
                 <button className="border border-blue-500 px-6 py-2 rounded-xl text-blue-600 hover:bg-blue-100">
